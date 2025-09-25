@@ -10,7 +10,8 @@ export default async function handler(req, res) {
     });
 
     const data = await response.text();
-
+    console.log("fasthub returned:", data);
+    
     // fasthub returns something like: "123456##########Your text"
     const mp3Id = data.split("##########")[0];
     const textReturned = data.split("##########")[1];
