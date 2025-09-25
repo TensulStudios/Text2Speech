@@ -1,0 +1,15 @@
+{
+  "name": "plauder-proxy",
+  "version": "1.0.0",
+  "description": "Vercel API to proxy requests to fasthub.net/plauder and return MP3 files",
+  "main": "api/plauder.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node api/plauder.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {}
+}
