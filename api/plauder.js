@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       repeat = "0"
     } = params;
 
-    // Forward request to fasthub
+    // Step 1: Call fasthub to generate MP3 ID
     const response = await fetch("https://fasthub.net/plauder", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -42,23 +42,25 @@ export default async function handler(req, res) {
     });
 
     const data = await response.text();
-    console.log("fasthub response:", data);
 
     if (!data.includes("##########")) {
-      return res.status(500).json({ error: "Unexpected response", raw: data });
+      return res.status(500).send("Unexpected response: " + data);
     }
 
-    const [mp3Id, returnedText] = data.split("##########");
+    const [mp3Id] = data.split("##########");
     const mp3Url = `https://fasthub.net/speak/${mp3Id}.mp3`;
 
-    // Return JSON with the MP3 link
-    return res.status(200).json({
-      mp3Url,
-      text: returnedText
-    });
+    // Step 2: Fetch the actual MP3 binary
+    const mp3Response = await fetch(mp3Url);
+    const buffer = Buffer.from(await mp3Response.arrayBuffer());
+
+    // Step 3: Stream it back as audio/mpeg
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Content-Disposition", 'inline; filename="speech.mp3"');
+    res.status(200).send(buffer);
 
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    res.status(500).send("Error: " + err.message);
   }
 }
