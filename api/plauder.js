@@ -1,34 +1,42 @@
 export default async function handler(req, res) {
+  // Allow all origins (for testing)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end(); // preflight response
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
-    // Forward the request to fasthub
     const response = await fetch("https://fasthub.net/plauder", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: new URLSearchParams(req.body) // forward body data
+      body: new URLSearchParams(req.body)
     });
 
     const data = await response.text();
-    console.log("fasthub returned:", data);
-    
-    // fasthub returns something like: "123456##########Your text"
-    const mp3Id = data.split("##########")[0];
-    const textReturned = data.split("##########")[1];
+    console.log("fasthub response:", data);
 
+    if (!data.includes("##########")) {
+      return res.status(500).json({ error: "Unexpected response", raw: data });
+    }
+
+    const [mp3Id, returnedText] = data.split("##########");
     const mp3Url = `https://fasthub.net/speak/${mp3Id}.mp3`;
 
-    // Optional: fetch the actual mp3 bytes and stream it back
-    const mp3Res = await fetch(mp3Url);
-    const arrayBuffer = await mp3Res.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Content-Disposition", `inline; filename="output.mp3"`);
-    res.send(buffer);
-
+    return res.status(200).json({
+      mp3Url,
+      text: returnedText
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Something went wrong" });
+    return res.status(500).json({ error: err.message });
   }
 }
