@@ -1,6 +1,5 @@
 // models/api/FastHub.js
-
-// 
+// https://github.com/TensulStudios/Text2Speech/
 
 export default async function handler(req, res) 
 {
